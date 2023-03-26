@@ -1,45 +1,44 @@
-const { Contact } = require("../models/contacts.js");
+const { Contact, contactValidationSchema } = require("../models/contacts.js");
 
-const contactStorage = require("../db/contacts.json");
-
-const listContacts = () => {
-  return contactStorage;
-};
-const getContactById = (contactId) => {
-  return contactStorage.find((u) => u.id == contactId);
+const listContacts = async () => {
+  const contacts = await Contact.find();
+  return contacts;
 };
 
-const removeContact = (contactId) => {
-  const index = contactStorage.findIndex((u) => u.id == contactId);
-  if (index > -1) {
-    contactStorage.splice(index, 1);
-    return true;
+const addContact = async (name, email, phone, favorite) => {
+  try {
+    const contact = new Contact({ name, email, phone, favorite });
+    contact.save();
+    return contact;
+  } catch (err) {
+    throw err;
   }
-  return false;
 };
 
-const addContact = (body) => {
-  const existingIds = contactStorage.map((contact) => parseInt(contact.id));
-  const newId = Math.max(...existingIds) + 1;
-  const contact = new Contact(
-    newId.toString(),
-    body.name,
-    body.email,
-    body.phone
-  );
-  contactStorage.push(contact);
+const getContactById = async (_id) => {
+  const contact = await Contact.findOne({ _id });
   return contact;
 };
-const updateContact = (contactId, body) => {
-  for (var i = 0; i < contactStorage.length; i++) {
-    if (contactStorage[i].id == contactId) {
-      contactStorage[i] = Object.assign({}, contactStorage[i], {
-        ...body,
-        id: contactStorage[i].id,
-      });
-      return;
-    }
+
+const removeContact = async (_id) => {
+  try {
+    return Contact.findByIdAndDelete({ _id });
+  } catch (err) {
+    console.log(err);
   }
+};
+
+const updateContact = async (_id, newContact) => {
+  const updatedContact = await Contact.findByIdAndUpdate(_id, newContact);
+  return updatedContact;
+};
+
+const updateStatusContact = async (_id, favorite) => {
+  const update = { favorite };
+  const updatedContact = await Contact.findByIdAndUpdate(_id, update, {
+    new: true,
+  });
+  return updatedContact;
 };
 
 module.exports = {
@@ -48,4 +47,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
+  updateStatusContact,
 };
