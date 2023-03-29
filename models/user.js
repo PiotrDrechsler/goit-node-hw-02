@@ -36,8 +36,8 @@ const User = mongoose.model("user", user);
 const userValidationSchema = Joi.object({
   password: Joi.string().required(),
   email: Joi.string().email().required(),
-  subscription: Joi.string().required(),
-  token: Joi.string().required(),
+  subscription: Joi.string(),
+  token: Joi.string(),
 });
 
 module.exports = { User, userValidationSchema, hashPassword };
