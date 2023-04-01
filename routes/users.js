@@ -29,4 +29,18 @@ router.get("/logout", auth, async (req, res) => {
   }
 });
 
+router.get("/current", auth, async (req, res, next) => {
+  const { id } = req.user;
+  const user = await getUserById(id);
+  if (!user) {
+    return res.status(401).json({ message: "Not authorized" });
+  } else {
+    const userData = {
+      email: user.email,
+      subscription: user.subscription,
+    };
+    res.status(200).json(userData);
+  }
+});
+
 module.exports = router;
