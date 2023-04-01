@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 
-const { getUserByEmail } = require("../controllers/users");
+const { getUserByEmail, addUserToken } = require("../controllers/users");
 const issueToken = require("./issueToken");
 
 const loginHandler = async (email, incomingPassword) => {
@@ -8,7 +8,9 @@ const loginHandler = async (email, incomingPassword) => {
   const userPassword = user.password;
   const result = bcrypt.compareSync(incomingPassword, userPassword);
   if (result) {
-    return issueToken(user);
+    const token = issueToken(user);
+    await addUserToken(user._id, token);
+    return token;
   } else {
     throw "Invalid credentials";
   }

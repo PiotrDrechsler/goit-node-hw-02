@@ -31,24 +31,19 @@ const getUserByEmail = async (email) => {
   return user;
 };
 
-const deleteUser = async (_id) => {
-  try {
-    return User.findByIdAndDelete({ _id });
-  } catch (err) {
-    console.log(err);
-  }
+const addUserToken = async (id, token) => {
+  return User.findByIdAndUpdate(id, { token });
 };
 
-const updateUser = async (id, newUser) => {
-  const updatedUser = await User.findByIdAndUpdate(id, newUser);
-  return updatedUser;
+const updateUserToken = async (_id) => {
+  return User.findOneAndUpdate(_id, { token: null });
 };
 
 module.exports = {
   createUser,
   getAllUsers,
   getUserById,
-  deleteUser,
-  updateUser,
+  addUserToken,
+  updateUserToken,
   getUserByEmail,
 };

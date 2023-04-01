@@ -19,7 +19,7 @@ const contacts = new Schema({
     default: false,
   },
   owner: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.SchemaTypes.ObjectId,
     ref: "user",
   },
 });
