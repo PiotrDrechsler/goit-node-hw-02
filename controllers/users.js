@@ -2,18 +2,15 @@ const { User, hashPassword } = require("../models/user");
 
 const createUser = async (password, email, subscription, token) => {
   const hashedPassword = hashPassword(password);
-  try {
-    const user = new User({
-      password: hashedPassword,
-      email,
-      subscription,
-      token,
-    });
-    user.save();
-    return user;
-  } catch (err) {
-    throw err;
-  }
+
+  const user = new User({
+    password: hashedPassword,
+    email,
+    subscription,
+    token,
+  });
+  user.save();
+  return user;
 };
 
 const getAllUsers = async () => {
