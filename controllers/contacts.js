@@ -1,4 +1,4 @@
-const { Contact, contactValidationSchema } = require("../models/contacts.js");
+const { Contact } = require("../models/contacts.js");
 
 const listContacts = async () => {
   const contacts = await Contact.find();
@@ -6,13 +6,9 @@ const listContacts = async () => {
 };
 
 const addContact = async (name, email, phone, favorite) => {
-  try {
-    const contact = new Contact({ name, email, phone, favorite });
-    contact.save();
-    return contact;
-  } catch (err) {
-    throw err;
-  }
+  const contact = new Contact({ name, email, phone, favorite });
+  contact.save();
+  return contact;
 };
 
 const getContactById = async (_id) => {

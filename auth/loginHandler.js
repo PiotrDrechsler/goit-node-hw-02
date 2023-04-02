@@ -12,7 +12,7 @@ const loginHandler = async (email, incomingPassword) => {
     await addUserToken(user._id, token);
     return token;
   } else {
-    throw "Invalid credentials";
+    throw new Error("Invalid credentials");
   }
 };
 
