@@ -1,5 +1,6 @@
 const express = require("express");
 
+const { auth } = require("../auth/auth");
 const {
   listContacts,
   getContactById,
@@ -12,7 +13,7 @@ const { contactValidationSchema } = require("../models/contacts");
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const contacts = await listContacts();
     res.status(200).json(contacts);
@@ -21,7 +22,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   const { error } = contactValidationSchema.validate(req.body);
   if (error) {
     return res.status(400).send(error.details[0].message);
@@ -36,7 +37,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     if (id.length !== 24) {
@@ -52,7 +53,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   const contactId = req.params.id;
   try {
     const removed = await removeContact(contactId);
@@ -66,7 +67,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   const { id } = req.params;
   if (!id) {
     return res.status(400).send("Id is required to perform update");
@@ -87,7 +88,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:contactId/favorite", async (req, res) => {
+router.patch("/:contactId/favorite", auth, async (req, res) => {
   try {
     const { contactId: _id } = req.params;
     const { favorite } = req.body;
