@@ -1,4 +1,8 @@
 const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
 
 const { auth } = require("../auth/auth");
 const loginHandler = require("../auth/loginHandler");
@@ -9,9 +13,26 @@ const {
   getUserById,
   getUserByEmail,
   updateUserToken,
+  updateAvatar,
 } = require("../controllers/users");
 
+const createFolderIfNotExist = require("../helpers/helpers");
+
 const router = express.Router();
+
+const storeImage = path.join(process.cwd(), "tmp");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, storeImage);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  },
+  limits: 1048576,
+});
+
+const upload = multer({ storage });
 
 router.post("/signup", async (req, res) => {
   const { error } = userValidationSchema.validate(req.body);
@@ -76,5 +97,45 @@ router.get("/current", auth, async (req, res, next) => {
     res.status(200).json(userData);
   }
 });
+
+router.patch(
+  "/avatars",
+  auth,
+  upload.single("avatar"),
+  async (req, res, next) => {
+    try {
+      const { email } = req.user;
+      const { path: temporaryName, originalname } = req.file;
+      const timestamp = Date.now();
+      const datestamp = new Date(timestamp).toISOString().slice(0, 10);
+      const fileName = path.join(
+        storeImage,
+        `${email}-${datestamp}-${timestamp}-${originalname}`
+      );
+      await fs.rename(temporaryName, fileName);
+      const img = await Jimp.read(fileName);
+      await img.autocrop().cover(250, 250).quality(60).writeAsync(fileName);
+      const avatarURL = path.join(
+        process.cwd(),
+        "public/avatars",
+        `${email}-${datestamp}-${timestamp}-${originalname}`
+      );
+      const cleanAvatarURL = avatarURL.replace(/\\/g, "/");
+      const user = await updateAvatar(email, cleanAvatarURL);
+      await fs.rename(
+        fileName,
+        path.join(
+          process.cwd(),
+          "public/avatars",
+          `${email}-${datestamp}-${timestamp}-${originalname}`
+        )
+      );
+      res.status(200).json(user);
+    } catch (error) {
+      next(error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  }
+);
 
 module.exports = router;

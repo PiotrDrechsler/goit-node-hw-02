@@ -23,6 +23,10 @@ const user = new Schema({
     type: String,
     default: null,
   },
+  avatarURL: {
+    type: String,
+    default: null,
+  },
 });
 
 const hashPassword = (pass) => {
@@ -38,6 +42,7 @@ const userValidationSchema = Joi.object({
   email: Joi.string().email().required(),
   subscription: Joi.string(),
   token: Joi.string(),
+  avatarURL: Joi.string(),
 });
 
 module.exports = { User, userValidationSchema, hashPassword };
