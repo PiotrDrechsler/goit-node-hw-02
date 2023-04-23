@@ -48,6 +48,15 @@ const updateAvatar = async (email, avatarURL) => {
   return user;
 };
 
+const verifyUser = async (verifyToken) => {
+  const user = await User.findOneAndUpdate(
+    { verifyToken },
+    { verify: true, verifyToken: null },
+    { new: true }
+  );
+  return user;
+};
+
 module.exports = {
   createUser,
   getAllUsers,
@@ -56,4 +65,5 @@ module.exports = {
   updateUserToken,
   getUserByEmail,
   updateAvatar,
+  verifyUser,
 };

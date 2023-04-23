@@ -3,6 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
+const nodemailer = require("nodemailer");
 
 const { auth } = require("../auth/auth");
 const loginHandler = require("../auth/loginHandler");
