@@ -15,6 +15,7 @@ const {
   getUserByEmail,
   updateUserToken,
   updateAvatar,
+  verifyUser,
 } = require("../controllers/users");
 
 const createFolderIfNotExist = require("../helpers/helpers");
@@ -138,5 +139,21 @@ router.patch(
     }
   }
 );
+
+router.get("/verify/:verificationToken", async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await verifyUser(verificationToken);
+
+    if (user) {
+      return res.status(200).json({ message: "Verification successful" });
+    } else {
+      return res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    next(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;
