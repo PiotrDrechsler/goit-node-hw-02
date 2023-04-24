@@ -48,6 +48,30 @@ router.post("/signup", async (req, res) => {
       return res.status(409).send(`Email ${email} is already in use!`);
     }
     const user = await createUser(password, email, subscription);
+    const transporter = nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.USER_EMAIL,
+        pass: process.env.USER_PWD,
+      },
+    });
+
+    const html = `
+    		<div>
+    			<p>Click on the link below to verify your account</p>
+    			<a href='http://localhost:3000/api/users/verify/${user.verifyToken}' target='_blank'>VERIFY</a>
+    		</div>`;
+
+    const emailOptions = {
+      from: '"Piotr" <piotre@example.com>',
+      to: [`${email}`],
+      subject: "Verification",
+      text: "Verification link",
+      html,
+    };
+    await transporter.sendMail(emailOptions);
     return res.status(200).json(user);
   } catch (err) {
     return res.status(500).send("Something went wrong POST!");
