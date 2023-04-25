@@ -3,6 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
+const nodemailer = require("nodemailer");
 
 const { auth } = require("../auth/auth");
 const loginHandler = require("../auth/loginHandler");
@@ -14,6 +15,8 @@ const {
   getUserByEmail,
   updateUserToken,
   updateAvatar,
+  verifyUser,
+  sendVerificationEmail,
 } = require("../controllers/users");
 
 const createFolderIfNotExist = require("../helpers/helpers");
@@ -46,7 +49,7 @@ router.post("/signup", async (req, res) => {
       return res.status(409).send(`Email ${email} is already in use!`);
     }
     const user = await createUser(password, email, subscription);
-    return res.status(200).json(user);
+    return res.status(201).json(user);
   } catch (err) {
     return res.status(500).send("Something went wrong POST!");
   }
@@ -61,6 +64,13 @@ router.post("/login", async (req, res) => {
   if (!user) {
     return res.status(400).send("User not found!!!");
   }
+  if (!user.verify) {
+    return res
+      .status(401)
+      .send(
+        "Account is not verified. Please verify your account before logging in."
+      );
+  }
   try {
     const token = await loginHandler(email, password);
     return res.status(200).send(token);
@@ -68,7 +78,6 @@ router.post("/login", async (req, res) => {
     return res.status(401).send("Email or password is wrong");
   }
 });
-
 router.get("/logout", auth, async (req, res) => {
   try {
     const { _id } = await req.user;
@@ -137,5 +146,41 @@ router.patch(
     }
   }
 );
+
+router.post("/verify", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).send("Missing required filed mail");
+  }
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    if (user.verify) {
+      return res.status(400).send("Verification has already been passed");
+    }
+    await sendVerificationEmail(user.email, user.verificationToken);
+    res.status(200).send("Verification email sent");
+  } catch (err) {
+    return res.status(500).send("Server error");
+  }
+});
+
+router.get("/verify/:verificationToken", async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await verifyUser(verificationToken);
+
+    if (user) {
+      return res.status(200).json({ message: "Verification successful" });
+    } else {
+      return res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    next(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;

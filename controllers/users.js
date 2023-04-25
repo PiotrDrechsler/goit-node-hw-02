@@ -1,19 +1,32 @@
 const { User, hashPassword } = require("../models/user");
 const gravatar = require("gravatar");
+const nodemailer = require("nodemailer");
+const { v4: uuidv4 } = require("uuid");
 
 const createUser = async (password, email, subscription, avatarURL, token) => {
-  const hashedPassword = hashPassword(password);
-  const createAvatar = gravatar.url(email, { d: "robohash", s: "250" });
+  try {
+    const hashedPassword = hashPassword(password);
+    const createAvatar = gravatar.url(email, { d: "robohash", s: "250" });
 
-  const user = new User({
-    password: hashedPassword,
-    email,
-    subscription,
-    avatarURL: createAvatar,
-    token,
-  });
-  user.save();
-  return user;
+    const user = new User({
+      password: hashedPassword,
+      email,
+      subscription,
+      avatarURL: createAvatar,
+      verify: false,
+      verificationToken: uuidv4(),
+      token,
+    });
+
+    await user.save();
+
+    await sendVerificationEmail(user.email, user.verificationToken);
+
+    return user;
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
 };
 
 const getAllUsers = async () => {
@@ -48,6 +61,47 @@ const updateAvatar = async (email, avatarURL) => {
   return user;
 };
 
+const verifyUser = async (verificationToken) => {
+  const user = await User.findOneAndUpdate(
+    { verificationToken },
+    { verify: true, verificationToken: null },
+    { new: true }
+  );
+  return user;
+};
+
+const sendVerificationEmail = async (email, verificationToken) => {
+  try {
+    const auth = await nodemailer.createTestAccount();
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false,
+      auth,
+    });
+
+    const html = `
+      <div>
+        <p>Click <a href="http://localhost:3000/api/users/verify/${verificationToken}">here</a> to verify your account</p>
+      </div>
+    `;
+
+    const info = await transporter.sendMail({
+      from: { name: "Piotr", address: "example@example.com" },
+      to: email,
+      subject: "Verify your account",
+      html,
+    });
+
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    console.log(previewUrl);
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+};
+
 module.exports = {
   createUser,
   getAllUsers,
@@ -56,4 +110,6 @@ module.exports = {
   updateUserToken,
   getUserByEmail,
   updateAvatar,
+  verifyUser,
+  sendVerificationEmail,
 };
