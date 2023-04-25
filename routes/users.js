@@ -16,6 +16,7 @@ const {
   updateUserToken,
   updateAvatar,
   verifyUser,
+  sendVerificationEmail,
 } = require("../controllers/users");
 
 const createFolderIfNotExist = require("../helpers/helpers");
@@ -48,31 +49,7 @@ router.post("/signup", async (req, res) => {
       return res.status(409).send(`Email ${email} is already in use!`);
     }
     const user = await createUser(password, email, subscription);
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.USER_EMAIL,
-        pass: process.env.USER_PWD,
-      },
-    });
-
-    const html = `
-    		<div>
-    			<p>Click on the link below to verify your account</p>
-    			<a href='http://localhost:3000/api/users/verify/${user.verifyToken}' target='_blank'>VERIFY</a>
-    		</div>`;
-
-    const emailOptions = {
-      from: '"Piotr" <piotre@example.com>',
-      to: [`${email}`],
-      subject: "Verification",
-      text: "Verification link",
-      html,
-    };
-    await transporter.sendMail(emailOptions);
-    return res.status(200).json(user);
+    return res.status(201).json(user);
   } catch (err) {
     return res.status(500).send("Something went wrong POST!");
   }
@@ -87,6 +64,13 @@ router.post("/login", async (req, res) => {
   if (!user) {
     return res.status(400).send("User not found!!!");
   }
+  if (!user.verify) {
+    return res
+      .status(401)
+      .send(
+        "Account is not verified. Please verify your account before logging in."
+      );
+  }
   try {
     const token = await loginHandler(email, password);
     return res.status(200).send(token);
@@ -94,7 +78,6 @@ router.post("/login", async (req, res) => {
     return res.status(401).send("Email or password is wrong");
   }
 });
-
 router.get("/logout", auth, async (req, res) => {
   try {
     const { _id } = await req.user;
@@ -163,6 +146,26 @@ router.patch(
     }
   }
 );
+
+router.post("/verify", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).send("Missing required filed mail");
+  }
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    if (user.verify) {
+      return res.status(400).send("Verification has already been passed");
+    }
+    await sendVerificationEmail(user.email, user.verificationToken);
+    res.status(200).send("Verification email sent");
+  } catch (err) {
+    return res.status(500).send("Server error");
+  }
+});
 
 router.get("/verify/:verificationToken", async (req, res, next) => {
   try {
