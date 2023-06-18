@@ -1,3 +1,3 @@
 PHONEBOOK API
 
-REST-API with user's authorization, authentication and user's email verification (Node.js, express)
+REST API with user authorization, authentication, and email verification using Node.js and Express
